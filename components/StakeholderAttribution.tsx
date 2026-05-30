@@ -62,8 +62,9 @@ export default function StakeholderAttribution() {
             ))}
           </ul>
           <p className="mt-3 rounded-lg bg-brand-50 px-3 py-2 text-xs leading-relaxed text-brand-800">
-            <strong>{collectivist}%</strong> of dropouts originate with someone other than the
-            student. No Western retention playbook addresses 3 of these 4.
+            In this model, <strong>{collectivist}%</strong> of dropouts trace to someone other
+            than the student — yet most retention playbooks optimize for the student alone. The
+            collectivist decision unit (parents + family + peers) is the under-served lever.
           </p>
         </div>
       </div>
