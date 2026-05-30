@@ -17,7 +17,6 @@ import { Card, CardHeader } from "./ui";
 const DIMS: { key: SegmentDimension; label: string }[] = [
   { key: "year", label: "Year of college" },
   { key: "tier", label: "College tier" },
-  { key: "language", label: "Language" },
   { key: "acquisition", label: "Acquisition source" },
 ];
 
@@ -166,8 +165,6 @@ export default function RetentionCurve() {
             "1st-years bleed in the first 8 weeks (onboarding + drift); final-years (4th) hold highest as placement nears. Each year is a different problem."}
           {dim === "tier" &&
             "Tier-3 cohorts retain ~25pts below NIT/IIIT — interventions must differ by baseline commitment."}
-          {dim === "language" &&
-            "Language cohorts diverge — a signal for where regional-language parent comms matter most."}
           {dim === "acquisition" &&
             "Tip: with many sources, click the chips above to focus on a few. Student-led/organic/referral retain best; broad paid (Instagram, InMobi) and counselor are the most fragile — acquisition quality is upstream of retention."}
         </p>

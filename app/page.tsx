@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Activity, Radar, Send, Compass, FlaskConical, LogOut, Sparkles } from "lucide-react";
+import { Activity, Radar, Send, FlaskConical, LogOut, Sparkles } from "lucide-react";
 import { STUDENTS } from "@/lib/data/students";
 import {
   getKpis,
@@ -19,6 +19,8 @@ import PeerClusterSignal from "@/components/PeerClusterSignal";
 import StudentDrawer from "@/components/StudentDrawer";
 import ReportCardGenerator from "@/components/ReportCardGenerator";
 import ExamModePanel from "@/components/ExamModePanel";
+import NudgeComposer from "@/components/NudgeComposer";
+import InterventionLibrary from "@/components/InterventionLibrary";
 import InsightsTab from "@/components/InsightsTab";
 import ChatTab from "@/components/ChatTab";
 import AuthGate, { useAuth } from "@/components/AuthGate";
@@ -77,10 +79,19 @@ function Dashboard() {
     <div className="mx-auto min-h-screen max-w-6xl px-4 pb-16 pt-6 sm:px-6">
       {/* Header */}
       <header className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-600 text-white shadow-sm">
-            <Compass size={20} />
-          </div>
+        <button
+          onClick={() => {
+            selectTab("diagnose");
+            if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+          className="flex items-center gap-3 rounded-xl text-left transition hover:opacity-80"
+          title="Go to home"
+          aria-label="NxtWave Academy Diagnostics — home"
+        >
+          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-card ring-1 ring-slate-100">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/nxtwave-logo.svg" alt="NxtWave" className="h-7 w-auto" />
+          </span>
           <div>
             <h1 className="text-xl font-bold tracking-tight text-ink">
               NxtWave Academy <span className="font-normal text-ink-faint">Diagnostics</span>
@@ -89,7 +100,7 @@ function Dashboard() {
               Diagnose → Detect → Intervene · synthetic data · NxtWave Academy
             </p>
           </div>
-        </div>
+        </button>
         <div className="flex items-center gap-3 self-start sm:self-auto">
           <span className="chip bg-amber-50 text-amber-700 ring-1 ring-amber-100">
             prototype — illustrative data
@@ -165,9 +176,26 @@ function Dashboard() {
 
       {/* INTERVENE */}
       {tab === "intervene" && (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <ReportCardGenerator students={reportTargets} />
-          <ExamModePanel />
+        <div className="space-y-5">
+          <div>
+            <h2 className="mb-2 px-1 text-sm font-semibold text-ink">
+              Live tools <span className="font-normal text-ink-faint">· generate the actual outreach</span>
+            </h2>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <ReportCardGenerator students={reportTargets} />
+              <NudgeComposer students={queue.length ? queue : reportTargets} />
+              <div className="lg:col-span-2">
+                <ExamModePanel />
+              </div>
+            </div>
+          </div>
+          <div>
+            <h2 className="mb-2 px-1 text-sm font-semibold text-ink">
+              Intervention playbook{" "}
+              <span className="font-normal text-ink-faint">· expert-backed plays, mapped to the dropout calendar</span>
+            </h2>
+            <InterventionLibrary />
+          </div>
         </div>
       )}
 

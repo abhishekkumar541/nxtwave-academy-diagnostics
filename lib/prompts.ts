@@ -1,4 +1,4 @@
-import type { Student } from "./types";
+import type { NudgeMoment, Student } from "./types";
 
 // System prompt for the "Ask" chat tab — a grounded, tool-scoped assistant.
 // The live data snapshot (from buildContext) is appended to this at request time.
@@ -13,6 +13,82 @@ Rules:
 - Stay in scope: NxtWave Academy retention and this tool. If asked something off-topic (general coding, unrelated trivia, etc.), briefly and politely decline and steer back to retention.
 - Don't overpromise outcomes or guarantee lift numbers. This is synthetic, illustrative data — say so if asked about real-world certainty.
 - Format with short paragraphs and bullet points where helpful. Keep it tight.`;
+
+// ── Nudge Composer ──────────────────────────────────────────────────────────
+// Drafts the actual intervention message for an at-risk student at a specific
+// dropout moment, grounded in their data, using the right expert mechanic.
+export const MOMENTS: Record<
+  NudgeMoment,
+  { label: string; audience: "student" | "parent"; guidance: string }
+> = {
+  "stuck-midnight": {
+    label: "Stuck at midnight",
+    audience: "student",
+    guidance:
+      "Hot-state save (Kristen/Nir/Kunal): the student is stuck on a bug late at night, about to quit. Give ONE hint or a way forward — never the full answer. Normalize it ('most students get stuck here'). Mantra: this frustration is what getting better feels like. End with 'try 10 more minutes'.",
+  },
+  "exam-approaching": {
+    label: "Exam approaching",
+    audience: "student",
+    guidance:
+      "Exam-Mode pact (Jackson/Nir): college internals are near. Reassure them it's OK to lighten up, offer to pause the streak (not break it), and pre-commit a specific small comeback the day after exams end. No guilt.",
+  },
+  "friend-dropped": {
+    label: "A batchmate dropped",
+    audience: "student",
+    guidance:
+      "Peer-contagion save (Kunal/Hilary): a friend in their cohort just paused. Privately reframe — one friend leaving is not data about YOU. Point to their own recent win as counter-evidence and invite a tiny joint task with a still-active batchmate.",
+  },
+  "parent-disengaged": {
+    label: "Parent disengaged",
+    audience: "parent",
+    guidance:
+      "Maa-Baap green report (Kunal/Hilary): write to the PARENT (who paid ₹2L) in their language. Lead with the win and the child's effort/consistency, give the parent one warm line they can say to the child. Never 'your child is failing'.",
+  },
+  "post-mock-failure": {
+    label: "After a mock failure",
+    audience: "student",
+    guidance:
+      "Loss-reframe (Nir/Hilary): they bombed a mock. Suppress the bare score. Show trajectory ('you improved on X'), normalize ('top scorers failed their first mock too'), attack the fixed-mindset belief, and give ONE small concrete next action.",
+  },
+  drifting: {
+    label: "Drifting / inactive",
+    audience: "student",
+    guidance:
+      "Behavioral activation (Hilary): they've gone quiet for days. Do NOT say 'resume your course'. Ask for ONE 90-second, fully spelled-out micro-action (e.g. write one line of code) to reverse the spiral. Warm, tiny, almost zero friction.",
+  },
+};
+
+export const NUDGE_SYSTEM = `You are "Apna Mentor", a warm senior coach inside NxtWave Academy — for tier 2/3 Indian college students in a 2-3 year coding program. You write a single short WhatsApp-style nudge at a specific at-risk moment.
+
+Rules:
+- Write in the recipient's REGIONAL LANGUAGE (given), in its native script. Warm, human, like a kind senior — NEVER a teacher grading them, never shaming.
+- Ground it in the specific student facts provided (name, last project, streak, college, top risk factor). Be concrete, not generic.
+- Follow the MOMENT GUIDANCE exactly (it names the behavioral mechanic to use).
+- WhatsApp-length: 2-4 short sentences. At most 1-2 emojis. Always end on ONE tiny, concrete next step.
+- For coding help, give a HINT or direction, never the full solution.
+- Never overpromise jobs/outcomes.
+
+Output STRICT JSON only, no markdown fences:
+{"message":"<nudge in the regional language/script>","translation":"<faithful English translation>"}`;
+
+export function buildNudgeUser(s: Student, moment: NudgeMoment): string {
+  const m = MOMENTS[moment];
+  return JSON.stringify({
+    recipient: m.audience,
+    language: s.language,
+    moment: m.label,
+    moment_guidance: m.guidance,
+    student_first_name: s.name.split(" ")[0],
+    college: s.college,
+    year_of_college: s.year,
+    current_streak_days: s.currentStreak,
+    last_project: s.lastProject,
+    projects_completed: s.projectsCompleted,
+    top_risk_factor: s.riskFactors[0]?.label ?? "—",
+    churn_risk_score: s.churnRiskScore,
+  });
+}
 
 // System prompt: defines the "Maa-Baap Report Card" voice.
 // This is the play no competitor builds — a weekly progress note to the PARENT,

@@ -38,7 +38,6 @@ export function buildContext(): string {
     retentionFinalRetentionBySegment: {
       year: curveFloors("year"),
       tier: curveFloors("tier"),
-      language: curveFloors("language"),
       acquisition: curveFloors("acquisition"),
     },
     dropoutCalendar: DROPOUT_CALENDAR.map((e) => ({

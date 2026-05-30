@@ -1,4 +1,4 @@
-import type { Language, ReportCard, Student } from "./types";
+import type { Language, NudgeMoment, NudgeResult, ReportCard, Student } from "./types";
 
 // Curated, pre-written report cards per language so a LIVE DEMO NEVER FAILS,
 // even with no API key / no network. The real LLM call (when a key is set)
@@ -39,6 +39,44 @@ const TEMPLATES: Record<Language, { message: string; translation: string }> = {
       "🙏 Namaskaram! This week {name} built {project} — very good. They rank {rank} of {cohort} in their college batch. At this pace they are on track for a good campus placement (6-10 LPA). Please show them this and ask what they learned. 📈",
   },
 };
+
+// Curated per-moment nudge fallbacks (English) so the Composer never hard-fails
+// without a live model. The real LLM call personalizes far better + in-language.
+const NUDGE_FALLBACK: Record<NudgeMoment, { audience: "student" | "parent"; tmpl: string }> = {
+  "stuck-midnight": {
+    audience: "student",
+    tmpl: "Hey {name} 👋 stuck on this one? Most students hit a wall exactly here — that frustration is what getting better feels like. Don't peek at the answer yet: re-read your last error line and try just 10 more minutes. You've got this.",
+  },
+  "exam-approaching": {
+    audience: "student",
+    tmpl: "Hi {name} — college exams coming up? Totally fine to lighten up. Tap Exam Mode and I'll freeze (not break) your {streak} streak. Let's pre-book one easy 10-min comeback the day after your exams end. 📚",
+  },
+  "friend-dropped": {
+    audience: "student",
+    tmpl: "Hey {name} — noticed a batchmate paused. That's about them, not you. You shipped {project} recently — that's real. Want to team up with someone still going for one quick problem today?",
+  },
+  "parent-disengaged": {
+    audience: "parent",
+    tmpl: "Namaste 🙏 Small update on {name}: this month they've been building consistently and recently made {project}. Consistency like this is exactly what leads to placements. Do tell them you're proud — it means more than you know.",
+  },
+  "post-mock-failure": {
+    audience: "student",
+    tmpl: "Hey {name} — one mock doesn't define you. Almost everyone who got placed failed their first one too. You've improved a lot since you started. Forget the score for now — solve just one 20-min question today to rebuild momentum. 💪",
+  },
+  drifting: {
+    audience: "student",
+    tmpl: "Hi {name} 👋 no pressure to 'catch up'. Just one tiny thing today: write one line of code — print(\"I'm back\"). That's it. Tap here and I'll meet you there.",
+  },
+};
+
+export function fallbackNudge(s: Student, moment: NudgeMoment): NudgeResult {
+  const f = NUDGE_FALLBACK[moment];
+  const msg = f.tmpl
+    .replaceAll("{name}", s.name.split(" ")[0])
+    .replaceAll("{project}", s.lastProject)
+    .replaceAll("{streak}", `${s.currentStreak}-day`);
+  return { audience: f.audience, message: msg, translation: msg, source: "fallback" };
+}
 
 export function fallbackReportCard(s: Student): ReportCard {
   const t = TEMPLATES[s.language];

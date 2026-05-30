@@ -134,6 +134,22 @@ export interface Kpi {
   tone: "good" | "warn" | "bad" | "neutral";
 }
 
+// Nudge Composer (Intervene tab)
+export type NudgeMoment =
+  | "stuck-midnight"
+  | "exam-approaching"
+  | "friend-dropped"
+  | "parent-disengaged"
+  | "post-mock-failure"
+  | "drifting";
+
+export interface NudgeResult {
+  audience: "student" | "parent";
+  message: string; // regional-language nudge
+  translation: string; // English
+  source: "llm" | "fallback";
+}
+
 // Shape returned by /api/report-card
 export interface ReportCard {
   language: Language;
