@@ -18,9 +18,10 @@ The LLM features (parent report card + the Ask chat) work **with no setup** — 
 
 ```bash
 cp .env.example .env.local
-# set ONE provider key in .env.local, e.g.
-#   PERPLEXITY_API_KEY=pplx-...
-#   # or OPENAI_API_KEY=sk-...
+# set ONE provider key in .env.local. Free, no credit card:
+#   GEMINI_API_KEY=...     # https://aistudio.google.com → "Get API key" (recommended)
+#   # or GROQ_API_KEY=...  # https://console.groq.com/keys
+# Paid alternatives also work: PERPLEXITY_API_KEY, OPENAI_API_KEY.
 ```
 
 With a key set, "Generate report card" writes a personalized WhatsApp-style message in the student's language (Telugu / Hindi / Tamil / Malayalam), and the Ask tab streams live answers. Without a key — or on any error — the app uses grounded fallbacks, so it never hard-fails.
@@ -95,7 +96,7 @@ Every email sign-in is recorded (timestamp in IST + email).
 1. `npm i -g vercel` (once).
 2. From this folder: `vercel --yes` (first run links/creates the project), then `vercel --prod`.
 3. Set env vars in **Vercel → Project → Settings → Environment Variables**:
-   - `PERPLEXITY_API_KEY` (or `OPENAI_API_KEY`) — for live chat + report card
+   - `GEMINI_API_KEY` (free, no card — recommended) or `GROQ_API_KEY` / `PERPLEXITY_API_KEY` / `OPENAI_API_KEY` — for live chat + report card
    - `SHEETS_WEBHOOK_URL` (optional, for Sheet logging)
    - Redeploy after adding env vars.
 - Non-interactive: `vercel --prod --token=$VERCEL_TOKEN --yes`.

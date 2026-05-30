@@ -24,7 +24,9 @@ export async function POST(req: Request) {
     const text = await llmComplete({
       system: REPORT_CARD_SYSTEM,
       user: buildReportCardUser(student),
-      maxTokens: 700,
+      // Generous budget: Gemini 2.5 Flash spends "thinking" tokens before output,
+      // so a small cap can truncate the JSON. The message itself is short.
+      maxTokens: 2048,
     });
 
     const parsed = safeParse(text);

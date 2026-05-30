@@ -6,7 +6,7 @@ import OpenAI from "openai";
 //
 // Priority: explicit LLM_PROVIDER > perplexity > openai > none.
 
-export type Provider = "perplexity" | "openai" | "none";
+export type Provider = "gemini" | "groq" | "perplexity" | "openai" | "none";
 
 interface ProviderConfig {
   provider: Provider;
@@ -18,14 +18,22 @@ interface ProviderConfig {
 export function getProviderConfig(): ProviderConfig {
   const forced = process.env.LLM_PROVIDER as Provider | undefined;
 
+  const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
   const has = {
+    gemini: !!geminiKey,
+    groq: !!process.env.GROQ_API_KEY,
     perplexity: !!process.env.PERPLEXITY_API_KEY,
     openai: !!process.env.OPENAI_API_KEY,
   };
 
+  // Priority favors the free, no-card options first (Gemini → Groq).
   const pick: Provider =
     forced && forced !== "none"
       ? forced
+      : has.gemini
+      ? "gemini"
+      : has.groq
+      ? "groq"
       : has.perplexity
       ? "perplexity"
       : has.openai
@@ -33,6 +41,20 @@ export function getProviderConfig(): ProviderConfig {
       : "none";
 
   switch (pick) {
+    case "gemini":
+      return {
+        provider: "gemini",
+        apiKey: geminiKey,
+        baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+        model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
+      };
+    case "groq":
+      return {
+        provider: "groq",
+        apiKey: process.env.GROQ_API_KEY,
+        baseURL: "https://api.groq.com/openai/v1",
+        model: process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
+      };
     case "perplexity":
       return {
         provider: "perplexity",
