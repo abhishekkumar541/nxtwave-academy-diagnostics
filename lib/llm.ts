@@ -1,80 +1,83 @@
 import OpenAI from "openai";
 
-// Provider-agnostic LLM layer (OpenAI-compatible). Auto-detects the provider
-// from env so the app can run on Perplexity or OpenAI by just setting a key —
-// and falls back gracefully ("none") so the demo never hard-fails.
+// Provider-agnostic LLM layer (OpenAI-compatible) with a FALLBACK CHAIN.
+// Every configured provider is tried in order until one succeeds; only if the
+// whole chain fails do callers use their canned fallback. Stacking free tiers
+// (Gemini → Groq → …) raises the effective rate/token ceiling and resilience.
 //
-// Priority: explicit LLM_PROVIDER > perplexity > openai > none.
+// Order: explicit LLM_PROVIDER pins one; otherwise gemini → groq → openai →
+// perplexity (each included only if its key is set).
 
-export type Provider = "gemini" | "groq" | "perplexity" | "openai" | "none";
+export type Provider = "gemini" | "groq" | "openai" | "perplexity";
 
 interface ProviderConfig {
   provider: Provider;
-  apiKey?: string;
+  apiKey: string;
   baseURL?: string;
-  model?: string;
+  model: string;
 }
 
-export function getProviderConfig(): ProviderConfig {
-  const forced = process.env.LLM_PROVIDER as Provider | undefined;
-
-  const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
-  const has = {
-    gemini: !!geminiKey,
-    groq: !!process.env.GROQ_API_KEY,
-    perplexity: !!process.env.PERPLEXITY_API_KEY,
-    openai: !!process.env.OPENAI_API_KEY,
-  };
-
-  // Priority favors the free, no-card options first (Gemini → Groq).
-  const pick: Provider =
-    forced && forced !== "none"
-      ? forced
-      : has.gemini
-      ? "gemini"
-      : has.groq
-      ? "groq"
-      : has.perplexity
-      ? "perplexity"
-      : has.openai
-      ? "openai"
-      : "none";
-
-  switch (pick) {
-    case "gemini":
-      return {
-        provider: "gemini",
-        apiKey: geminiKey,
-        baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
-        model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
-      };
-    case "groq":
-      return {
-        provider: "groq",
-        apiKey: process.env.GROQ_API_KEY,
-        baseURL: "https://api.groq.com/openai/v1",
-        model: process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
-      };
-    case "perplexity":
-      return {
-        provider: "perplexity",
-        apiKey: process.env.PERPLEXITY_API_KEY,
-        baseURL: "https://api.perplexity.ai",
-        model: process.env.PERPLEXITY_MODEL || "sonar",
-      };
-    case "openai":
-      return {
-        provider: "openai",
-        apiKey: process.env.OPENAI_API_KEY,
-        model: process.env.OPENAI_MODEL || "gpt-4o-mini",
-      };
-    default:
-      return { provider: "none" };
+function configFor(p: Provider): ProviderConfig | null {
+  switch (p) {
+    case "gemini": {
+      const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+      return apiKey
+        ? {
+            provider: "gemini",
+            apiKey,
+            baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+            model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
+          }
+        : null;
+    }
+    case "groq": {
+      const apiKey = process.env.GROQ_API_KEY;
+      return apiKey
+        ? {
+            provider: "groq",
+            apiKey,
+            baseURL: "https://api.groq.com/openai/v1",
+            model: process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
+          }
+        : null;
+    }
+    case "openai": {
+      const apiKey = process.env.OPENAI_API_KEY;
+      return apiKey
+        ? { provider: "openai", apiKey, model: process.env.OPENAI_MODEL || "gpt-4o-mini" }
+        : null;
+    }
+    case "perplexity": {
+      const apiKey = process.env.PERPLEXITY_API_KEY;
+      return apiKey
+        ? {
+            provider: "perplexity",
+            apiKey,
+            baseURL: "https://api.perplexity.ai",
+            model: process.env.PERPLEXITY_MODEL || "sonar",
+          }
+        : null;
+    }
   }
 }
 
+// Ordered list of every configured provider — the fallback chain.
+export function getProviderChain(): ProviderConfig[] {
+  const forced = process.env.LLM_PROVIDER as Provider | undefined;
+  const order: Provider[] =
+    forced && ["gemini", "groq", "openai", "perplexity"].includes(forced)
+      ? [forced]
+      : ["gemini", "groq", "openai", "perplexity"];
+  return order.map(configFor).filter((c): c is ProviderConfig => c !== null);
+}
+
 export function hasLLM(): boolean {
-  return getProviderConfig().provider !== "none";
+  return getProviderChain().length > 0;
+}
+
+// Names of the active chain, for logging/telemetry.
+export function providerChainLabel(): string {
+  return getProviderChain().map((c) => c.provider).join(" → ") || "none";
 }
 
 export interface ChatMessage {
@@ -82,71 +85,81 @@ export interface ChatMessage {
   content: string;
 }
 
-// Non-streaming completion (used by the report card). Returns plain text.
+// Non-streaming completion (report card / nudge). Tries each provider in the
+// chain until one returns non-empty text; throws only if the whole chain fails.
 export async function llmComplete(opts: {
   system: string;
   user: string;
   maxTokens?: number;
 }): Promise<string> {
-  const cfg = getProviderConfig();
-  if (cfg.provider === "none") throw new Error("no LLM provider configured");
+  const chain = getProviderChain();
+  if (chain.length === 0) throw new Error("no LLM provider configured");
 
-  const client = new OpenAI({ apiKey: cfg.apiKey, baseURL: cfg.baseURL });
-  const resp = await client.chat.completions.create({
-    model: cfg.model!,
-    max_tokens: opts.maxTokens ?? 700,
-    messages: [
-      { role: "system", content: opts.system },
-      { role: "user", content: opts.user },
-    ],
-  });
-  return (resp.choices[0]?.message?.content || "").trim();
+  let lastErr: unknown;
+  for (const cfg of chain) {
+    try {
+      const client = new OpenAI({ apiKey: cfg.apiKey, baseURL: cfg.baseURL });
+      const resp = await client.chat.completions.create({
+        model: cfg.model,
+        max_tokens: opts.maxTokens ?? 2048,
+        messages: [
+          { role: "system", content: opts.system },
+          { role: "user", content: opts.user },
+        ],
+      });
+      const text = (resp.choices[0]?.message?.content || "").trim();
+      if (text) return text;
+      lastErr = new Error(`${cfg.provider} returned empty`);
+    } catch (err) {
+      console.error(`llmComplete: ${cfg.provider} failed, trying next →`, err instanceof Error ? err.message : err);
+      lastErr = err;
+    }
+  }
+  throw lastErr ?? new Error("all providers failed");
 }
 
-// Streaming chat (used by the Ask tab). Returns a ReadableStream of text chunks.
-// On any error (or no provider), emits `fallback` so the chat never shows a raw
-// error and the demo never hard-fails.
+// Streaming chat (Ask tab). Tries each provider in order; if one fails BEFORE
+// emitting any text, falls through to the next. Emits `fallback` only if the
+// entire chain produces nothing.
 export function llmStream(opts: {
   system: string;
   messages: ChatMessage[];
   maxTokens?: number;
   fallback: string;
 }): ReadableStream<Uint8Array> {
-  const cfg = getProviderConfig();
+  const chain = getProviderChain();
   const encoder = new TextEncoder();
 
   return new ReadableStream({
     async start(controller) {
       let emittedAny = false;
-      try {
-        if (cfg.provider === "none") {
-          throw new Error("no LLM provider configured");
-        }
-
-        const client = new OpenAI({ apiKey: cfg.apiKey, baseURL: cfg.baseURL });
-        const ai = await client.chat.completions.create({
-          model: cfg.model!,
-          max_tokens: opts.maxTokens ?? 900,
-          stream: true,
-          messages: [
-            { role: "system", content: opts.system },
-            ...opts.messages.map((m) => ({ role: m.role, content: m.content })),
-          ],
-        });
-        for await (const chunk of ai) {
-          const text = chunk.choices[0]?.delta?.content;
-          if (text) {
-            emittedAny = true;
-            controller.enqueue(encoder.encode(text));
+      for (const cfg of chain) {
+        if (emittedAny) break;
+        try {
+          const client = new OpenAI({ apiKey: cfg.apiKey, baseURL: cfg.baseURL });
+          const ai = await client.chat.completions.create({
+            model: cfg.model,
+            max_tokens: opts.maxTokens ?? 900,
+            stream: true,
+            messages: [
+              { role: "system", content: opts.system },
+              ...opts.messages.map((m) => ({ role: m.role, content: m.content })),
+            ],
+          });
+          for await (const chunk of ai) {
+            const text = chunk.choices[0]?.delta?.content;
+            if (text) {
+              emittedAny = true;
+              controller.enqueue(encoder.encode(text));
+            }
           }
+        } catch (err) {
+          console.error(`llmStream: ${cfg.provider} failed, trying next →`, err instanceof Error ? err.message : err);
+          // try next provider in the chain
         }
-        if (!emittedAny) controller.enqueue(encoder.encode(opts.fallback));
-      } catch (err) {
-        console.error("llmStream error, emitting fallback:", err);
-        if (!emittedAny) controller.enqueue(encoder.encode(opts.fallback));
-      } finally {
-        controller.close();
       }
+      if (!emittedAny) controller.enqueue(encoder.encode(opts.fallback));
+      controller.close();
     },
   });
 }
