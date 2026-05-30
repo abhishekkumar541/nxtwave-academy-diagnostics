@@ -1,6 +1,6 @@
 # Methodology — Risk Scoring & Evals
 
-How the two "thinking" parts of **NxtWave Academy Diagnostics** work. Written to be defended to a data/analytics panelist. *(All data is synthetic/illustrative.)*
+How the two "thinking" parts of **NxtWave Academy Diagnostics** work — the churn-risk score and the evals engine. *(All data is synthetic/illustrative.)*
 
 ---
 
