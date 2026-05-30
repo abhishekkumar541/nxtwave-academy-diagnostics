@@ -21,9 +21,10 @@ import type {
 type Profile = { floor: number; dipWeek: number; dipDepth: number; decay: number };
 
 const YEAR_PROFILES: Record<string, { label: string; color: string; p: Profile }> = {
-  "1": { label: "1st-year", color: "#3366ff", p: { floor: 38, dipWeek: 6, dipDepth: 22, decay: 0.9 } },
-  "2": { label: "2nd-year", color: "#f59e0b", p: { floor: 47, dipWeek: 10, dipDepth: 16, decay: 0.7 } },
-  "3": { label: "3rd-year", color: "#16a34a", p: { floor: 58, dipWeek: 18, dipDepth: 12, decay: 0.5 } },
+  "1": { label: "1st-year", color: "#3366ff", p: { floor: 36, dipWeek: 6, dipDepth: 22, decay: 0.95 } },
+  "2": { label: "2nd-year", color: "#f59e0b", p: { floor: 46, dipWeek: 10, dipDepth: 16, decay: 0.72 } },
+  "3": { label: "3rd-year", color: "#8b5cf6", p: { floor: 54, dipWeek: 16, dipDepth: 13, decay: 0.55 } },
+  "4": { label: "4th-year (final)", color: "#16a34a", p: { floor: 62, dipWeek: 22, dipDepth: 11, decay: 0.45 } },
 };
 
 const TIER_PROFILES: Record<string, { label: string; color: string; p: Profile }> = {
@@ -113,7 +114,7 @@ export function getStakeholderSlices(): StakeholderSlice[] {
     counts[s.dropoutStakeholder!] = (counts[s.dropoutStakeholder!] || 0) + 1;
   }
   const total = leaving.length || 1;
-  const order = ["student", "father", "mother", "family WhatsApp", "college peers"] as const;
+  const order = ["student", "parents", "family WhatsApp", "college peers"] as const;
   return order.map((st) => ({
     stakeholder: st,
     count: counts[st] || 0,

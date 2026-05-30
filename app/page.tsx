@@ -180,8 +180,8 @@ function Dashboard() {
       <StudentDrawer student={selected} onClose={() => setSelected(null)} />
 
       <footer className="mt-10 text-center text-[11px] text-ink-faint">
-        Built as an interview artifact — grounded in the Academy retention thesis
-        (7-event dropout calendar · 5-stakeholder decision unit · Exam Mode · Maa-Baap Report Card).
+        A retention operating loop for a long-horizon edtech program
+        (7-event dropout calendar · 4-stakeholder decision unit · Exam Mode · Maa-Baap Report Card) · synthetic data.
       </footer>
     </div>
   );

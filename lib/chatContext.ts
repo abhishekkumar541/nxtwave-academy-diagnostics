@@ -47,7 +47,7 @@ export function buildContext(): string {
       churnIntensity: e.churnRate,
       note: e.note,
     })),
-    fiveStakeholderAttribution: getStakeholderSlices().map((s) => ({
+    stakeholderAttribution: getStakeholderSlices().map((s) => ({
       stakeholder: s.stakeholder,
       pct: s.pct,
     })),

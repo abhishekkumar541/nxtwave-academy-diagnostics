@@ -137,7 +137,7 @@ const PROJECTS = [
 const MENTOR_PODS = ["Pod-Arjuna", "Pod-Bheema", "Pod-Karna", "Pod-Drona", "Pod-Eklavya", "Pod-Surya"];
 
 const STAKEHOLDERS: Stakeholder[] = [
-  "student", "father", "mother", "family WhatsApp", "college peers",
+  "student", "parents", "family WhatsApp", "college peers",
 ];
 
 // ---------------------------------------------------------------------------
@@ -167,7 +167,7 @@ function generate(): Student[] {
 
   for (let i = 0; i < TOTAL; i++) {
     const col = pick(COLLEGES);
-    const year = pick<YearOfCollege>([1, 2, 2, 3]); // 2nd-years over-represented (Academy reality)
+    const year = pick<YearOfCollege>([1, 2, 2, 3, 3, 4]); // 2nd/3rd-years over-represented (Academy reality)
     const name = `${pick(FIRST_NAMES)} ${pick(LAST_NAMES)}`;
     const weeksEnrolled = randint(1, 130);
 
@@ -253,14 +253,13 @@ function generate(): Student[] {
     }
   }
 
-  // Attribute the dropout decision across the 5-stakeholder unit for everyone who
+  // Attribute the dropout decision across the 4-stakeholder unit for everyone who
   // has left or is mid-leaving (paused + churned). We deal from a fixed-proportion
-  // deck so the collectivist story (4 of 5 are NOT the student) always reads
-  // cleanly regardless of sample size — student ~22%, the other four dominate.
+  // deck so the collectivist story (3 of 4 are NOT the student) always reads
+  // cleanly regardless of sample size — student ~17%, the other three dominate.
   const DECK: Stakeholder[] = [
-    "father", "father", "father",
+    "parents", "parents", "parents", "parents", "parents",
     "college peers", "college peers", "college peers",
-    "mother", "mother",
     "family WhatsApp", "family WhatsApp",
     "student", "student",
   ];

@@ -6,8 +6,7 @@ import { Card, CardHeader } from "./ui";
 
 const COLORS: Record<string, string> = {
   student: "#3366ff",
-  father: "#dc2626",
-  mother: "#f59e0b",
+  parents: "#dc2626",
   "family WhatsApp": "#16a34a",
   "college peers": "#8b5cf6",
 };
@@ -23,7 +22,7 @@ export default function StakeholderAttribution() {
     <Card>
       <CardHeader
         title="Who really decided the dropout?"
-        subtitle="The 5-stakeholder decision unit — most dashboards collapse this into one churn number"
+        subtitle="The 4-stakeholder decision unit — most dashboards collapse this into one churn number"
       />
       <div className="flex flex-col items-center gap-2 px-5 pb-5 pt-3 sm:flex-row">
         <div className="h-44 w-44 shrink-0">
@@ -64,7 +63,7 @@ export default function StakeholderAttribution() {
           </ul>
           <p className="mt-3 rounded-lg bg-brand-50 px-3 py-2 text-xs leading-relaxed text-brand-800">
             <strong>{collectivist}%</strong> of dropouts originate with someone other than the
-            student. No Western retention playbook addresses 4 of these 5.
+            student. No Western retention playbook addresses 3 of these 4.
           </p>
         </div>
       </div>

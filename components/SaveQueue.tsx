@@ -39,7 +39,7 @@ export default function SaveQueue({
                   <div className="font-medium text-ink">{s.name}</div>
                   <div className="text-[11px] text-ink-faint">
                     {s.college} · {s.year}
-                    {s.year === 1 ? "st" : s.year === 2 ? "nd" : "rd"}-yr · {langScript(s.language)}
+                    {s.year === 1 ? "st" : s.year === 2 ? "nd" : s.year === 3 ? "rd" : "th"}-yr · {langScript(s.language)}
                   </div>
                 </td>
                 <td className="px-2 py-2.5">

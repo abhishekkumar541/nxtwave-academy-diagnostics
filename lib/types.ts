@@ -1,6 +1,6 @@
 // Core domain types for the Academy Retention Command Center.
 
-export type YearOfCollege = 1 | 2 | 3;
+export type YearOfCollege = 1 | 2 | 3 | 4;
 
 export type CollegeTier = "NIT/IIIT" | "Tier-2" | "Tier-3";
 
@@ -36,11 +36,10 @@ export const ACQUISITION_SOURCES: AcquisitionSource[] = [
 
 export type StudentStatus = "active" | "at-risk" | "paused" | "churned";
 
-// The 5-stakeholder decision unit (Kunal framing). Who actually drove a dropout.
+// The stakeholder decision unit (Kunal framing). Who actually drove a dropout.
 export type Stakeholder =
   | "student"
-  | "father"
-  | "mother"
+  | "parents"
   | "family WhatsApp"
   | "college peers";
 
