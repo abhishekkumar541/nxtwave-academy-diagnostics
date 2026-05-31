@@ -34,14 +34,22 @@ export async function POST(req: Request) {
   const record = { ts, email: email.trim() };
 
   // (1) Google Sheet via Apps Script webhook (the durable, prod path).
+  // IMPORTANT: AWAIT it. On serverless (Vercel) a fire-and-forget fetch is killed
+  // when the function freezes after returning — so logins were being dropped.
+  // We await with a timeout so a slow/down webhook still can't hang the login.
   const webhook = process.env.SHEETS_WEBHOOK_URL;
   if (webhook) {
-    // fire-and-forget; never block or fail the login on a logging hiccup
-    fetch(webhook, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(record),
-    }).catch((e) => console.error("sheets webhook failed:", e));
+    try {
+      await fetch(webhook, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(record),
+        redirect: "follow", // Apps Script /exec 302-redirects its response
+        signal: AbortSignal.timeout(5000),
+      });
+    } catch (e) {
+      console.error("sheets webhook failed (non-fatal):", e);
+    }
   }
 
   // (2) Local JSONL fallback (dev). On serverless, cwd is read-only → use tmp.
